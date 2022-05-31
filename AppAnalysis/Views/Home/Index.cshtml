@@ -1,0 +1,29 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using AppAnalysis.Data
+@using System.Linq;
+@using Microsoft.EntityFrameworkCore
+@inject SignInManager<User> _signInManager
+@inject ApplicationDbContext _db;
+@{
+    var isSignedIn = _signInManager.IsSignedIn(User);
+
+}
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-2">AppAnalysis</h1>
+    @if (isSignedIn)
+    {
+        if (!_db.Users.Any())
+        {
+            await _signInManager.SignOutAsync();
+            return;
+        }
+        var user = await _db.Users.Include(u => u.Apps).FirstAsync(u => u.UserName == User.Identity.Name);
+        var appCount = user.Apps.Count;
+            <h1 class="display-4">Количество приложений: @appCount</h1>
+    }
+</div>

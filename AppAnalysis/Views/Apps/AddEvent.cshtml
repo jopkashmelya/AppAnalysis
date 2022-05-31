@@ -1,0 +1,45 @@
+﻿@model AppAnalysis.Models.EventViewModel
+@{
+    ViewData["Title"] = "Добавить событие";
+}
+
+<h1 class="display-4">Добавить событие</h1>
+<p>Дата вводится в таком формате: <code>02/05/2022 15:58:44</code> (второе число-месяц)</p>
+<p>ID приложения можно узнать, нажав на страницу просмотра статистики приложения</p>
+<p>Если после отправки события вас перекинуло на пустую страницу, то значит, что все хорошо, вы можете лицезреть свое событие в просмотре статистики</p>
+<p>Если после отправки события вы видите страницу с ошибкой, то скорее всего вы написали неразрешенный айди или дату не по формату</p>
+<form method="post" asp-controller="Apps" asp-action="AddEvent">
+    <div>
+        <label asp-for="AppId"></label><br/>
+        <input asp-for="AppId"/>
+    </div>
+    <div>
+        <label asp-for="Name"></label><br/>
+        <input asp-for="Name"/>
+    </div>
+    <div>
+        <label asp-for="Date"></label><br/>
+        <input asp-for="Date"/>
+    </div>
+    <input type="submit" value="Добавить"/>
+</form>
+
+<p>Чтобы сделать то же самое, но с помощью кода, можно использовать, например, такой код: </p>
+<pre>
+const url = 'https://localhost:7078/Apps/AddEvent/'
+const data = {
+    AppId: 1,
+    Name: "hi",
+    Date: '30/05/2022 15:58:44'
+}
+
+fetch(url, {
+    method: 'post',
+    body: JSON.stringify(data),
+    headers: {
+        'RequestVerificationToken': '',
+        'Content-Type': 'application/json'
+    }
+}).then((res) => console.log(res))
+
+    </pre>

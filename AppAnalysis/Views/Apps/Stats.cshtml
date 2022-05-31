@@ -1,0 +1,225 @@
+﻿@using System.Security.Cryptography
+@model IEnumerable<AppAnalysis.Models.Event>
+@{
+    List<string> eventNames = new();
+    foreach (var e in Model)
+    {
+        if (eventNames.Contains(e.Name))
+            continue;
+        eventNames.Add(e.Name);
+    }
+    ViewData["Title"] = $"Статистика приложения {ViewData["appName"]}";
+}
+
+<h1 class="display-4">Статистика приложения @ViewData["appName"] (ID: @ViewData["id"])</h1>
+@if (eventNames.Count > 0)
+{
+    <div class="container-fluid row">
+        <div class="col">
+            <p>Разбивка просмотров(по неделям временно не работает)</p>
+            <select class="form-select" id="select-sort">
+                <option selected value="month">По месяцам</option>
+                <option value="year">По годам</option>
+            </select>
+        </div>
+        <div class="col">
+            <p>Событие</p>
+            <select class="form-select" id="select-name">
+                <option selected>@eventNames[0] </option>
+                @if (eventNames.Count > 1)
+                {
+                    for (int i = 1; i < eventNames.Count; i++)
+                    {
+                        <option>@eventNames[i]</option>
+                    }
+                }
+
+            </select>
+        </div>
+    </div>
+
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <table class="table">
+        <tr>
+            <th>Название</th><th>Дата создания</th><th></th>
+        </tr>
+        @foreach (var e in Model)
+        {
+            <tr>
+                <td>
+                    @e.Name
+                </td>
+                <td>@e.Date</td>
+            </tr>
+        }
+    </table>
+}
+else
+{
+    <p>Нет данных:(</p>
+    <p>Но вы можете воспользоваться вкладкой "Добавить событие", либо добавить событие вручную, с помощью апи(инструкция все в той же вкладке)</p>
+}
+
+@section Scripts
+{
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://momentjs.com/downloads/moment-with-locales.min.js"></script>
+    <script>
+function range(start, end) {
+    let res = [];
+    for (let i = start; i <= end; i++) {
+        res.push(i);
+    }
+    return res;
+}
+$(async function () {
+
+    const t = window.location.href.split("/")
+    const url = t[0] + "//" + t[2] + "/Apps/GetEvents/@ViewData["id"]"
+    let fetchedEvents = await fetch(url).then(res => res.json())
+    moment.locale("ru")
+    let selectedEvent = fetchedEvents[0].name;
+    let selectedSort = "month"
+    let months = [];
+
+    let weekLabels = []
+    let monthLabels = []
+    let yearLabels = []
+    let events = []
+
+    function updateCurrentEvents() {
+        events = []
+        fetchedEvents.forEach(e => {
+            if (e.name === selectedEvent)
+                events.push(e)
+        })
+        console.log(`Events = `)
+        console.log(events)
+    }
+    updateCurrentEvents()
+    function updateLabels() {
+
+        const startDate = moment(events[0].date).utc()
+        const endDate = moment(events[events.length - 1].date).utc()
+        const startWeek = startDate.week()
+        const endWeek = endDate.week()
+
+        weekLabels = range(startWeek, endWeek)
+        months = []
+
+        let end = startDate.month() + Math.abs(startDate.diff(endDate, 'months'))
+        for (let i = startDate.month(); i <= end; i++) {
+            const year = startDate.year() + Math.floor(i / 12);
+            const month = i - Math.floor(i / 12) * 12
+            console.log(`year(${year}); month(${month})`)
+            months.push(moment().year(year).month(month))
+        }
+        monthLabels = months.map(m => m.format("MMMM yyyy"))
+
+        yearLabels = range(startDate.format("yyyy"), endDate.format("yyyy"));
+                console.log("monthLabels = ")
+                console.log(monthLabels)
+    }
+    updateLabels()
+    let weeksData = new Array(weekLabels.length).fill(0);
+    let monthsData = new Array(months.length).fill(0);
+    let yearsData = new Array(yearLabels.length).fill(0);
+
+    function updateData() {
+        weeksData = new Array(weekLabels.length).fill(0);
+        monthsData = new Array(months.length).fill(0);
+        yearsData = new Array(yearLabels.length).fill(0);
+        console.log("Update data")
+        console.log(events)
+        events.forEach(e => {
+                let m = moment(e.date).utc();
+                yearLabels.forEach((year, i) => {
+                    if (parseInt(year) === m.year()) {
+                        yearsData[i]++;
+                    }
+                })
+
+                months.forEach((date, i) => {
+                    if (date.month() === m.month() && date.year() === m.year()) {
+                        monthsData[i]++;
+                    }
+                })
+                
+                weekLabels.forEach((week, i) => {
+                    // не учитывается год, небольшой баг
+                    if (week === m.week()) {
+                        weeksData[i]++;
+                    }
+                })
+        })
+    }
+    updateData()
+
+    const data = {
+        labels: monthLabels,
+        datasets: [{
+            label: selectedEvent,
+            backgroundColor: 'rgb(255, 99, 132)',
+            borderColor: 'rgb(255, 99, 132)',
+            data: monthsData,
+        }]
+    };
+
+    const config = {
+        type: 'line',
+        data: data,
+        options: {}
+    };
+
+    const myChart = new Chart(
+        document.getElementById('myChart'),
+        config
+    );
+
+    function updateChart() {
+        console.log(`${selectedSort} chart update`)
+        switch (selectedSort) {
+            case 'month':
+                console.log(monthsData)
+                myChart.data.datasets[0].data = monthsData
+                myChart.data.labels = monthLabels
+                break
+            case 'week':
+                console.log(weeksData)
+                myChart.data.datasets[0].data = weeksData
+                myChart.data.labels = weekLabels
+                break
+            case 'year':
+                console.log(yearsData)
+                myChart.data.datasets[0].data = yearsData
+                myChart.data.labels = yearLabels
+                break
+        }
+        myChart.data.datasets[0].label = selectedEvent
+        myChart.update();
+    }
+
+    $('#select-name').change(function () {
+        selectedEvent = $('#select-name').val()
+        console.log(selectedEvent)
+        updateCurrentEvents()
+        updateLabels()
+        updateData()
+        updateChart();
+
+    })
+
+    $('#select-sort').change(function () {
+        selectedSort = $('#select-sort').val()
+        updateCurrentEvents()
+        updateLabels()
+        updateChart();
+
+    })
+})
+    </script>
+
+}

@@ -1,0 +1,23 @@
+﻿@model IEnumerable<AppAnalysis.Models.UserApp>
+@{
+    ViewData["Title"] = "Список приложений";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Список приложений</h1>
+    <a>Нажмите на название приложения, чтобы просмотреть его статистику</a>
+</div>
+<table class="table">
+    <tr>
+        <th>Название</th><th>Дата создания</th><th></th>
+    </tr>
+    @foreach (var app in Model)
+    {
+        <tr>
+            <td>
+                <a class="nav-link" asp-controller="Apps" asp-action="Stats" asp-route-id="@app.Id">@app.Name</a>
+            </td>
+            <td>@app.CreationDate</td>
+        </tr>
+    }
+</table>

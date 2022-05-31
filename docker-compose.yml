@@ -1,0 +1,32 @@
+﻿version: '3.9'
+
+networks:
+  dockerapi-dev:
+    driver: bridge
+
+services:
+  dockerapi:
+    image: dockerapi:latest
+    depends_on:
+      - "postgres_image"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    networks:
+      - dockerapi-dev
+  
+  postgres_image:
+    image: postgres:latest
+    ports:
+      - "5432"
+    restart: always
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "rad95"
+      POSTGRES_DB: "appdb"
+    networks:
+      - dockerapi-dev
+volumes:
+  db_volume:

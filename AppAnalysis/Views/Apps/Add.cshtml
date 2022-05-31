@@ -1,0 +1,17 @@
+﻿@model AppAnalysis.Models.CreateAppViewModel
+@{
+    ViewData["Title"] = "Добавить приложение";
+}
+
+<h1 class="display-4">Добавить приложение</h1>
+
+<form method="post" asp-controller="Apps" asp-action="Add">
+    <div asp-validation-summary="ModelOnly"></div>
+    <div>
+        <label asp-for="Name"></label><br/>
+        <input asp-for="Name"/>
+    </div>
+    <div>
+        <input type="submit" value="Войти"/>
+    </div>
+</form>
